@@ -1,0 +1,41 @@
+{
+    "name": "soapbox/relatedcontent",
+    "description": "Retrieves a list of similar content based on taxonomies and fields.",
+    "type": "bolt-extension",
+    "keywords": [
+        "related",
+        "related content",
+        "taxonomy",
+        "tags",
+        "categories"
+    ],
+    "require": {
+        "bolt/bolt": "^3.2.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Graham May",
+            "email": "graham.may@soapbox.co.uk"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Bolt\\Extension\\Soapbox\\RelatedContent\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Bolt\\Extension\\Soapbox\\RelatedContent\\Tests\\": "tests",
+            "Bolt\\Tests\\": "vendor/bolt/bolt/tests/phpunit/unit/"
+        }
+    },
+    "extra": {
+        "bolt-class": "Bolt\\Extension\\Soapbox\\RelatedContent\\RelatedContentExtension"
+    }
+}
