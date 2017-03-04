@@ -2,6 +2,32 @@
 
 Retrieves a weighted array of similar content based on a configurable set of taxonomies and fields. Also has the ability to combine with a manual related content selection field. 
 
+---
+
+# Quick Start Guide
+
+Customise the config to suit your contenttypes and taxonomies:
+
+```yml
+limit : 10
+contenttypes: [ spotlights, news, research, resources, events ]
+taxonomies: [ tags, categories ]
+```
+
+Loop through the related content in your .twig file:
+
+```twig
+    {% for item in relatedcontent(record) %}
+        <p><a href="{{ item.link }}">{{ item.title|e }}</a></p>
+    {% endfor %}
+```
+
+You should be good to go!
+
+---
+
+# In Depth Guide
+
 ## Usage
 
 Default usage:
