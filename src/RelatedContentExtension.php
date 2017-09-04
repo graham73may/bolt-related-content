@@ -68,6 +68,11 @@ class RelatedContentExtension extends SimpleExtension
     function getRelatedContent($record, $options = [])
     {
 
+        // Reset the result stores
+        $this->manual_results   = [];
+        $this->weighted_results = [];
+        $this->auto_results     = [];
+
         // Save parameters to class
         $this->record  = $record;
         $this->options = $options;
