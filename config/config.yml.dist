@@ -1,5 +1,5 @@
 # Limit the number of items returned
-limit : 10
+limit: 10
 
 # Content types to look for related content in
 contenttypes: [ spotlights, news, research, resources, events ]
@@ -24,3 +24,10 @@ manual_related_content_field: related_content
 # - array (e.g. a multi select)
 # - json (e.g. a plugin like relationlist)
 manual_related_content_field_type: json
+
+# Include Reverse Related Content (If the current item has been selected as related content on another item, show that item)
+# - This will appear after manual related content and before automatic related content.
+include_reverse_related_content: false
+
+# Disable automatic related content?
+auto_related_content_disabled: false

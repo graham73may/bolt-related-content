@@ -68,6 +68,8 @@ See `config.yml` for more information. Options include:
 * `fields` : An array of fields to use to find similar content and weigh results
 * `manual_related_content_field` : A string of a field name which can be used to manually select related content.
 * `manual_related_content_field_type` : The way the manual related content field is stored in the database.
+* `include_reverse_related_content` : Add a related content reverse lookup to the selection?
+* `auto_related_content_disabled` : Disable automatic related content selection?
 
 ### Limit
 The `limit:` value is the number of items returned by the `relatedcontent()` twig function.

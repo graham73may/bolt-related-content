@@ -82,7 +82,9 @@ class RelatedContentExtension extends SimpleExtension
         $this->current_taxonomies  = $record->taxonomy;
 
         // Number of related items to return
-        $limit = $this->getConfigValue('limit');
+        $limit                           = $this->getConfigValue('limit');
+        $auto_related_content_disabled   = $this->getConfigValue('auto_related_content_disabled');
+        $include_reverse_related_content = $this->getConfigValue('include_reverse_related_content');
 
         /**
          * @var array $related_content
@@ -90,8 +92,16 @@ class RelatedContentExtension extends SimpleExtension
         // Get Manually related content
         $related_content = $this->getManualRelatedContent();
 
+        // Include "reverse" related content
+        if ($include_reverse_related_content) {
+            $reverse_related_content = $this->getReverseRelatedContent();
+
+            // Remove duplicates and merge with manual
+            $related_content = array_merge($related_content, $this->removeDuplicateResults($related_content, $reverse_related_content));
+        }
+
         // Does the manual content fulfil are limit requirements?
-        if (count($related_content) < $limit) {
+        if (!$auto_related_content_disabled && count($related_content) < $limit) {
             $auto_related_content = $this->getAutoRelatedContent();
 
             // Remove duplicates and merge with manual
@@ -232,6 +242,47 @@ class RelatedContentExtension extends SimpleExtension
         return $this->auto_results;
     }
 
+    /**
+     * Find where the current record has been selected as a related content item.
+     *
+     * @return array
+     */
+    private function getReverseRelatedContent()
+    {
+
+        $app = $this->getContainer();
+
+        $reverse_related_content           = [];
+        $record_identifier                 = $this->record->contenttype['slug'] . '/' . $this->record->get('id');
+        $manual_field                      = $this->getConfigValue('manual_related_content_field');
+        $manual_field_type                 = $this->getManualFieldType();
+        $contenttypes_with_related_content = $this->getContenttypesWithRelatedContentField();
+        $contenttypes_query_string         = $this->getQueryContentTypesString($contenttypes_with_related_content);
+
+        switch ($manual_field_type) {
+            case 'array':
+                // SBTODO: Add array support to reverse lookup. Need more testing, but should be the same as json/relationlist below...
+
+            case 'relationlist':
+            case 'json':
+                $where_query = [$manual_field => '%' . $record_identifier . '%'];
+                break;
+
+            case 'single':
+                // SBTODO: Add single selection support to reverse lookup. Needs more testing.
+                $where_query = [$manual_field => $record_identifier];
+                break;
+        }
+
+        $results = $app['query']->getContent($contenttypes_query_string, $where_query);
+
+        if (!empty($results)) {
+            $reverse_related_content = $results->get('results');
+        }
+
+        return $reverse_related_content;
+    }
+
     private function getConfigValue($key)
     {
 
@@ -298,7 +349,27 @@ class RelatedContentExtension extends SimpleExtension
         if (!empty($fields)) {
             foreach ($fields as $slug => $values) {
                 switch ($values['type']) {
-                    // Support for ReleationList extension
+                    // Support for AjaxMultiSelectCT extension
+                    case 'ajaxmultictselect':
+                        // Stored in the DB as:
+                        //{"1":"people\/11"}
+
+                        $field_values = $values['value'];
+
+                        // Wrap in like query
+                        array_walk($field_values, function (&$value) {
+
+                            $value = str_replace('/', '\\\\\\\\/', $value);
+
+                            $value = '%' . $value . '%';
+                        });
+
+                        $query_array[$slug] = $field_values;
+                        $query_string       = implode($field_values, ' || ');
+
+                        break;
+
+                    // Support for RelationList extension
                     case 'relationlist':
                         $field_values = json_decode($values['value'], true);
 
@@ -384,6 +455,38 @@ class RelatedContentExtension extends SimpleExtension
     }
 
     /**
+     * Get an array of contenttypes that should be checked for content related to the current item
+     * - Defaults to all contenttypes
+     * - Config value `contenttypes` can be used to define which contenttypes to check
+     *
+     * @return array Array of contenttypes that can be checked for related content
+     */
+    private function getContenttypesWithRelatedContentField()
+    {
+
+        // App
+        $app = $this->getContainer();
+
+        // Get configs
+        $all_contenttypes = $app['config']->get('contenttypes');
+        $manual_field     = $this->getConfigValue('manual_related_content_field');
+
+        // Use all contenttypes
+        $rc_contenttypes = $all_contenttypes;
+
+        if (!empty($all_contenttypes)) {
+            // If config has been defined, remove any that are not included
+            foreach ($all_contenttypes as $key => $type) {
+                if (!array_key_exists($manual_field, $type['fields'])) {
+                    unset($rc_contenttypes[$key]);
+                }
+            }
+        }
+
+        return $rc_contenttypes;
+    }
+
+    /**
      * Check fields that should be taken into consideration when calculating a result's weight
      *
      * @return array Array of fields to calculate weight for
@@ -439,7 +542,7 @@ class RelatedContentExtension extends SimpleExtension
                         unset($allowed_taxonomies[$key]);
                     }
                 }
-            } else if ($config_taxonomies !== null) {
+            } elseif ($config_taxonomies !== null) {
                 $allowed_taxonomies = [];
             }
 
